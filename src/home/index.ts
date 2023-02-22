@@ -6,9 +6,12 @@ gsap.registerPlugin(TextPlugin);
 gsap.registerPlugin(ScrollTrigger);
 
 const RED = '#ff576d';
+const ORANGE = '#fb913a';
 const NAVY = '#181d2c';
 const GRAY = '#3d414e';
 const WHITE = '#ffffff';
+const BG_RO_GRADIENT = `linear-gradient(115deg, ${RED}, ${ORANGE})`;
+const BG_WHITE_GRADIENT = `linear-gradient(115deg, ${WHITE}, ${WHITE})`;
 
 window.Webflow ||= [];
 window.Webflow.push(() => {
@@ -21,33 +24,35 @@ window.Webflow.push(() => {
     const bulletHeadings = document.querySelectorAll('.is-bullet-content');
     const videoWrappers = document.querySelectorAll('.window-wrap-scrollcomp');
 
+    // set initial states
+    gsap.set(bullets[0], { backgroundColor: RED, borderColor: RED });
+    gsap.set(bulletHeadings[0], { backgroundImage: BG_RO_GRADIENT });
+    gsap.set(videoWrappers, { opacity: 0, yPercent: 4 });
+
     // register the effect with GSAP:
     gsap.registerEffect({
       name: 'videoFadeAndMove',
       effect: (target: GSAPTweenTarget) => {
         return gsap
-          .timeline()
+          .timeline({ defaults: { ease: 'none' } })
           .from(target, {
             opacity: 0,
             yPercent: 4,
-            ease: 'none',
           })
           .to(target, {
             opacity: 1,
             duration: 3,
             yPercent: 0,
-            ease: 'none',
           })
           .to(target, {
             opacity: 0,
             yPercent: -4,
-            ease: 'none',
           });
       },
-      extendTimeline: true, //now you can call the effect directly on any GSAP timeline to have the result immediately inserted in the position you define (default is sequenced at the end)
+      extendTimeline: true,
     });
 
-    const contentTimeline = gsap.timeline({
+    const masterTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: '.sticky-layout',
         start: 'top top',
@@ -73,11 +78,6 @@ window.Webflow.push(() => {
       },
     });
 
-    // set initial states
-    gsap.set(bullets[0], { backgroundColor: RED, borderColor: RED });
-    gsap.set(bulletHeadings[0], { color: RED });
-    gsap.set(videoWrappers, { opacity: 0, yPercent: 4 });
-
     videoTimeline
       .videoFadeAndMove(videoWrappers[0])
       .videoFadeAndMove(videoWrappers[1])
@@ -85,7 +85,7 @@ window.Webflow.push(() => {
       .videoFadeAndMove(videoWrappers[3])
       .videoFadeAndMove(videoWrappers[4]);
 
-    contentTimeline
+    masterTimeline
       .to(bulletLines[0], {
         height: '100%',
         onComplete: () => handleOnComplete(1),
@@ -112,15 +112,15 @@ window.Webflow.push(() => {
 
     function handleOnComplete(stepNumber: number) {
       // reset
-      gsap.set(bullets, { backgroundColor: NAVY, borderColor: GRAY });
-      gsap.set(bulletHeadings, { color: WHITE });
+      gsap.to(bullets, { backgroundColor: NAVY, borderColor: GRAY });
+      gsap.to(bulletHeadings, { backgroundImage: BG_WHITE_GRADIENT });
       gsap.set(bulletLines, { height: '10%' });
-      gsap.set(videoWrappers, { opacity: 0 });
+      //gsap.set(videoWrappers, { opacity: 0 });
 
       // set new
-      gsap.set(bullets[stepNumber], { backgroundColor: RED, borderColor: RED });
-      gsap.set(bulletHeadings[stepNumber], { color: RED });
-      gsap.set(videoWrappers[stepNumber], { opacity: 1 });
+      gsap.to(bullets[stepNumber], { backgroundColor: RED, borderColor: RED });
+      gsap.to(bulletHeadings[stepNumber], { backgroundImage: BG_RO_GRADIENT });
+      //gsap.to(videoWrappers[stepNumber], { opacity: 1 });
     }
   }
 
