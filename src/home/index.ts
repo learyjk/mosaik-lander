@@ -2,19 +2,25 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { TextPlugin } from 'gsap/TextPlugin';
+import { Flip } from 'gsap/Flip';
+
 import Swiper, { Navigation } from 'swiper';
 import 'swiper/css/bundle';
 
-gsap.registerPlugin(TextPlugin);
-gsap.registerPlugin(ScrollTrigger);
-gsap.registerPlugin(ScrollToPlugin);
+gsap.registerPlugin(TextPlugin, ScrollTrigger, ScrollToPlugin, Flip);
 
 const RED = '#ff576d';
 const ORANGE = '#fb913a';
 const NAVY = '#181d2c';
 const GRAY = '#3d414e';
 const WHITE = '#ffffff';
-const BG_RO_GRADIENT = `linear-gradient(115deg, ${RED}, ${ORANGE})`;
+const DARK_BLUE = '#4673D1';
+const LIGHT_BLUE = '#51BFE1';
+const PURPLE = '#928CDA';
+const PINK = '#FF576D';
+const BG_REDORANGE_GRADIENT = `linear-gradient(115deg, ${RED}, ${ORANGE})`;
+const BG_BLUE_GRADIENT = `linear-gradient(115deg, ${DARK_BLUE}, ${LIGHT_BLUE})`;
+const BG_PURPLEPINK_GRADIENT = `linear-gradient(115deg, ${PURPLE}, ${PINK})`;
 const BG_WHITE_GRADIENT = `linear-gradient(115deg, ${WHITE}, ${WHITE})`;
 
 window.Webflow ||= [];
@@ -31,7 +37,7 @@ window.Webflow.push(() => {
 
     // set initial states
     gsap.set(bullets[0], { backgroundColor: RED, borderColor: RED });
-    gsap.set(bulletHeadings[0], { backgroundImage: BG_RO_GRADIENT });
+    gsap.set(bulletHeadings[0], { backgroundImage: BG_REDORANGE_GRADIENT });
     gsap.set(videoWrappers, { opacity: 0, yPercent: 4 });
 
     // register the effect with GSAP:
@@ -132,7 +138,7 @@ window.Webflow.push(() => {
 
       // set new
       gsap.to(bullets[stepNumber], { backgroundColor: RED, borderColor: RED });
-      gsap.to(bulletHeadings[stepNumber], { backgroundImage: BG_RO_GRADIENT });
+      gsap.to(bulletHeadings[stepNumber], { backgroundImage: BG_REDORANGE_GRADIENT });
       //gsap.to(videoWrappers[stepNumber], { opacity: 1 });
     }
   }
@@ -162,6 +168,7 @@ window.Webflow.push(() => {
     let swiperMain = new Swiper('.swiper', {
       slidesPerView: 1,
       keyboard: true,
+      speed: 500,
       direction: 'horizontal',
       navigation: {
         nextEl: '.swiper-button-next',
@@ -178,19 +185,22 @@ window.Webflow.push(() => {
     threeBtn?.addEventListener('click', () => {
       swiperMain.slideTo(2);
     });
+    return swiperMain;
   }
-  buildSwiper();
+  let swiper = buildSwiper();
 
   function laptopSectionScroll() {
     let laptopTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: '.laptop-lottie',
         start: 'top bottom',
-        end: 'top top+=30%', // offset from lottie
-        markers: true,
+        end: 'top top+=20%', // offset from lottie
+        //markers: true,
         scrub: true,
       },
     });
+
+    // dummy tween
     laptopTimeline.to('.laptop-lottie', {
       opacity: 1,
       onComplete: () => {
@@ -204,4 +214,127 @@ window.Webflow.push(() => {
     });
   }
   laptopSectionScroll();
+
+  function swiperController(swiper: Swiper) {
+    let activeIndex = 0;
+    const DURATION = 0.5;
+    const swiperControlWrap = document.querySelector<HTMLDivElement>('.swiper-control-wrap');
+    const swiperControlAnchors = swiperControlWrap?.querySelectorAll(
+      '.swiper-control'
+    ) as NodeListOf<HTMLAnchorElement>;
+    const swiperControlHeadings = swiperControlWrap?.querySelectorAll(
+      '.swiper-control_heading'
+    ) as NodeListOf<HTMLHeadingElement>;
+    const swiperControlTexts = swiperControlWrap?.querySelectorAll(
+      '.swiper-control_text'
+    ) as NodeListOf<HTMLParagraphElement>;
+    const topMover = swiperControlWrap?.querySelector('.swiper-control_top-mover');
+    const laptopVideos = document.querySelectorAll(
+      '[wb-data="laptop-video"]'
+    ) as NodeListOf<HTMLVideoElement>;
+    if (!topMover) return;
+
+    //init
+    const initialGrayHeading = getComputedStyle(swiperControlHeadings[0]).backgroundImage;
+    const initialGrayText = getComputedStyle(swiperControlTexts[0]).color;
+    gsap.set(swiperControlHeadings[0], { backgroundImage: BG_BLUE_GRADIENT });
+    gsap.set(swiperControlTexts[0], { color: WHITE });
+
+    swiperControlAnchors.forEach((control, index) => {
+      control.addEventListener('click', () => {
+        // do nothing if already active
+        if (index === activeIndex) {
+          return;
+        }
+        let lastIndex = activeIndex;
+        activeIndex = index;
+
+        // Move Swiper
+        swiper.slideTo(activeIndex);
+
+        // Reset Video
+        laptopVideos[activeIndex].currentTime = 0;
+
+        // Top Mover Animation
+        const state = Flip.getState(topMover, { props: 'backgroundImage' });
+        swiperControlAnchors[activeIndex].prepend(topMover);
+        gsap.set(topMover, {
+          backgroundImage: () => {
+            if (activeIndex === 0) {
+              return BG_BLUE_GRADIENT;
+            } else if (activeIndex === 1) {
+              return BG_PURPLEPINK_GRADIENT;
+            } else {
+              return BG_REDORANGE_GRADIENT;
+            }
+          },
+        });
+        Flip.from(state, {
+          duration: DURATION,
+          ease: 'power1.out',
+          absolute: true,
+        });
+
+        // Headings and Text
+        gsap
+          .timeline({ defaults: { duration: DURATION, ease: 'power1.out' } })
+          .to(swiperControlHeadings[lastIndex], {
+            backgroundImage: initialGrayHeading,
+          })
+          .to(
+            swiperControlTexts[lastIndex],
+            {
+              color: initialGrayText,
+            },
+            '<'
+          )
+          .to(
+            swiperControlHeadings[activeIndex],
+            {
+              backgroundImage: () => {
+                if (activeIndex === 0) {
+                  return BG_BLUE_GRADIENT;
+                } else if (activeIndex === 1) {
+                  return BG_PURPLEPINK_GRADIENT;
+                } else {
+                  return BG_REDORANGE_GRADIENT;
+                }
+              },
+            },
+            '<'
+          )
+          .to(
+            swiperControlTexts[activeIndex],
+            {
+              color: WHITE,
+            },
+            '<'
+          );
+
+        let mm = gsap.matchMedia();
+
+        mm.add('(max-width: 768px)', () => {
+          // this setup code only runs when viewport is less than 768px wide
+          gsap
+            .timeline({ defaults: { duration: DURATION, ease: 'power1.out' } })
+            .to(swiperControlTexts, {
+              height: '0px',
+            })
+            .to(
+              swiperControlTexts[activeIndex],
+              {
+                height: 'auto',
+              },
+              '<'
+            );
+
+          return () => {
+            // optional
+            // custom cleanup code here (runs when it STOPS matching)
+          };
+        });
+      });
+    });
+  }
+  swiperController(swiper);
 });
