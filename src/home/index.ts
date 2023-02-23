@@ -3,8 +3,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { Flip } from 'gsap/Flip';
-
 import Swiper, { Navigation } from 'swiper';
+import { initAnimations } from '../utils/initAnimations';
 import 'swiper/css/bundle';
 
 gsap.registerPlugin(TextPlugin, ScrollTrigger, ScrollToPlugin, Flip);
@@ -26,7 +26,14 @@ const BG_WHITE_GRADIENT = `linear-gradient(115deg, ${WHITE}, ${WHITE})`;
 window.Webflow ||= [];
 window.Webflow.push(() => {
   typeWriterIntro();
+  let swiper = buildSwiper();
+  swiperController(swiper);
   functionalitySuiteComponent();
+  laptopOpening();
+
+  const laptopVideos = document.querySelectorAll(
+    '[wb-data="laptop-video"]'
+  ) as NodeListOf<HTMLVideoElement>;
 
   function functionalitySuiteComponent() {
     const bulletRows = document.querySelectorAll('.bullet-row') as NodeListOf<HTMLAnchorElement>;
@@ -70,12 +77,11 @@ window.Webflow.push(() => {
       extendTimeline: true,
     });
 
-    const masterTimeline = gsap.timeline({
+    var masterTimeline = gsap.timeline({
       scrollTrigger: {
         trigger: '.sticky-wrapper',
         start: 'top top',
         end: 'bottom bottom',
-        //markers: true,
         scrub: 1,
       },
       defaults: {
@@ -98,7 +104,6 @@ window.Webflow.push(() => {
 
     videoTimeline
       .videoFadeAndMove(videoWrappers[0])
-      .addLabel('marker1')
       .videoFadeAndMove(videoWrappers[1])
       .videoFadeAndMove(videoWrappers[2])
       .videoFadeAndMove(videoWrappers[3])
@@ -187,33 +192,32 @@ window.Webflow.push(() => {
     });
     return swiperMain;
   }
-  let swiper = buildSwiper();
 
-  function laptopSectionScroll() {
-    let laptopTimeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: '.laptop-lottie',
-        start: 'top bottom',
-        end: 'top top+=20%', // offset from lottie
-        //markers: true,
-        scrub: true,
-      },
-    });
-
-    // dummy tween
-    laptopTimeline.to('.laptop-lottie', {
-      opacity: 1,
-      onComplete: () => {
-        const laptopVideos = document.querySelectorAll(
-          '[wb-data="laptop-video"]'
-        ) as NodeListOf<HTMLVideoElement>;
-        laptopVideos.forEach((video) => {
-          video.currentTime = 0;
+  function laptopOpening() {
+    gsap.set('.laptop-screen-wrap', { opacity: 0 });
+    initAnimations()
+      .then(() => {
+        //console.log('Initialized lottie animations');
+        const LOTTIE_DURATION = 1.7;
+        ScrollTrigger.create({
+          trigger: '.laptop-trigger',
+          start: 'top bottom',
+          onToggle: () => {
+            gsap.set('.laptop-screen-wrap', {
+              opacity: 1,
+              delay: LOTTIE_DURATION,
+              onComplete: () => {
+                laptopVideos.forEach((laptopVideo) => (laptopVideo.currentTime = 0));
+                console.log('reset video time');
+              },
+            });
+          },
         });
-      },
-    });
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   }
-  laptopSectionScroll();
 
   function swiperController(swiper: Swiper) {
     let activeIndex = 0;
@@ -229,9 +233,9 @@ window.Webflow.push(() => {
       '.swiper-control_text'
     ) as NodeListOf<HTMLParagraphElement>;
     const topMover = swiperControlWrap?.querySelector('.swiper-control_top-mover');
-    const laptopVideos = document.querySelectorAll(
-      '[wb-data="laptop-video"]'
-    ) as NodeListOf<HTMLVideoElement>;
+    // const laptopVideos = document.querySelectorAll(
+    //   '[wb-data="laptop-video"]'
+    // ) as NodeListOf<HTMLVideoElement>;
     if (!topMover) return;
 
     //init
@@ -253,7 +257,17 @@ window.Webflow.push(() => {
         swiper.slideTo(activeIndex);
 
         // Reset Video
-        laptopVideos[activeIndex].currentTime = 0;
+        swiper.on('slideChange', () => {
+          laptopVideos.forEach((video) => {
+            video.currentTime = 0;
+            video.pause();
+          });
+        });
+        swiper.on('slideChangeTransitionEnd', () => {
+          laptopVideos.forEach((video) => {
+            video.play();
+          });
+        });
 
         // Top Mover Animation
         const state = Flip.getState(topMover, { props: 'backgroundImage' });
@@ -336,5 +350,4 @@ window.Webflow.push(() => {
       });
     });
   }
-  swiperController(swiper);
 });

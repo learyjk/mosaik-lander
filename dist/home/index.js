@@ -11867,6 +11867,26 @@
   Swiper.use([Resize, Observer2]);
   var core_default = Swiper;
 
+  // src/utils/initAnimations.ts
+  async function animationLoaded(animation) {
+    if (animation.isLoaded) {
+      return true;
+    }
+    return new Promise((resolve, reject) => {
+      animation.addEventListener("DOMLoaded", () => {
+        resolve(true);
+      });
+    });
+  }
+  async function waitForAnimationsLoaded(animations) {
+    await Promise.all(animations.map(animationLoaded));
+  }
+  async function initAnimations() {
+    const lottie = Webflow.require("lottie").lottie;
+    const animations = lottie.getRegisteredAnimations();
+    await waitForAnimationsLoaded(animations);
+  }
+
   // src/home/index.ts
   gsapWithCSS.registerPlugin(TextPlugin, ScrollTrigger2, ScrollToPlugin, Flip);
   var RED = "#ff576d";
@@ -11885,7 +11905,13 @@
   window.Webflow ||= [];
   window.Webflow.push(() => {
     typeWriterIntro();
+    let swiper = buildSwiper();
+    swiperController(swiper);
     functionalitySuiteComponent();
+    laptopOpening();
+    const laptopVideos = document.querySelectorAll(
+      '[wb-data="laptop-video"]'
+    );
     function functionalitySuiteComponent() {
       const bulletRows = document.querySelectorAll(".bullet-row");
       const bullets = document.querySelectorAll(".bullet");
@@ -11918,12 +11944,11 @@
         },
         extendTimeline: true
       });
-      const masterTimeline = gsapWithCSS.timeline({
+      var masterTimeline = gsapWithCSS.timeline({
         scrollTrigger: {
           trigger: ".sticky-wrapper",
           start: "top top",
           end: "bottom bottom",
-          //markers: true,
           scrub: 1
         },
         defaults: {
@@ -11941,7 +11966,7 @@
           ease: "none"
         }
       });
-      videoTimeline.videoFadeAndMove(videoWrappers[0]).addLabel("marker1").videoFadeAndMove(videoWrappers[1]).videoFadeAndMove(videoWrappers[2]).videoFadeAndMove(videoWrappers[3]).videoFadeAndMove(videoWrappers[4]);
+      videoTimeline.videoFadeAndMove(videoWrappers[0]).videoFadeAndMove(videoWrappers[1]).videoFadeAndMove(videoWrappers[2]).videoFadeAndMove(videoWrappers[3]).videoFadeAndMove(videoWrappers[4]);
       masterTimeline.to(bulletLines[0], {
         height: "100%",
         onComplete: () => handleOnComplete(1)
@@ -12007,31 +12032,28 @@
       });
       return swiperMain;
     }
-    let swiper = buildSwiper();
-    function laptopSectionScroll() {
-      let laptopTimeline = gsapWithCSS.timeline({
-        scrollTrigger: {
-          trigger: ".laptop-lottie",
+    function laptopOpening() {
+      gsapWithCSS.set(".laptop-screen-wrap", { opacity: 0 });
+      initAnimations().then(() => {
+        const LOTTIE_DURATION = 1.7;
+        ScrollTrigger2.create({
+          trigger: ".laptop-trigger",
           start: "top bottom",
-          end: "top top+=20%",
-          // offset from lottie
-          //markers: true,
-          scrub: true
-        }
-      });
-      laptopTimeline.to(".laptop-lottie", {
-        opacity: 1,
-        onComplete: () => {
-          const laptopVideos = document.querySelectorAll(
-            '[wb-data="laptop-video"]'
-          );
-          laptopVideos.forEach((video) => {
-            video.currentTime = 0;
-          });
-        }
+          onToggle: () => {
+            gsapWithCSS.set(".laptop-screen-wrap", {
+              opacity: 1,
+              delay: LOTTIE_DURATION,
+              onComplete: () => {
+                laptopVideos.forEach((laptopVideo) => laptopVideo.currentTime = 0);
+                console.log("reset video time");
+              }
+            });
+          }
+        });
+      }).catch((error) => {
+        console.error(error);
       });
     }
-    laptopSectionScroll();
     function swiperController(swiper2) {
       let activeIndex = 0;
       const DURATION = 0.5;
@@ -12046,9 +12068,6 @@
         ".swiper-control_text"
       );
       const topMover = swiperControlWrap?.querySelector(".swiper-control_top-mover");
-      const laptopVideos = document.querySelectorAll(
-        '[wb-data="laptop-video"]'
-      );
       if (!topMover)
         return;
       const initialGrayHeading = getComputedStyle(swiperControlHeadings[0]).backgroundImage;
@@ -12063,7 +12082,17 @@
           let lastIndex = activeIndex;
           activeIndex = index;
           swiper2.slideTo(activeIndex);
-          laptopVideos[activeIndex].currentTime = 0;
+          swiper2.on("slideChange", () => {
+            laptopVideos.forEach((video) => {
+              video.currentTime = 0;
+              video.pause();
+            });
+          });
+          swiper2.on("slideChangeTransitionEnd", () => {
+            laptopVideos.forEach((video) => {
+              video.play();
+            });
+          });
           const state = Flip.getState(topMover, { props: "backgroundImage" });
           swiperControlAnchors[activeIndex].prepend(topMover);
           gsapWithCSS.set(topMover, {
@@ -12128,7 +12157,6 @@
         });
       });
     }
-    swiperController(swiper);
   });
 })();
 /*! Bundled license information:
