@@ -1,9 +1,13 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { TextPlugin } from 'gsap/TextPlugin';
+import Swiper, { Navigation } from 'swiper';
+import 'swiper/css/bundle';
 
 gsap.registerPlugin(TextPlugin);
 gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollToPlugin);
 
 const RED = '#ff576d';
 const ORANGE = '#fb913a';
@@ -19,6 +23,7 @@ window.Webflow.push(() => {
   functionalitySuiteComponent();
 
   function functionalitySuiteComponent() {
+    const bulletRows = document.querySelectorAll('.bullet-row') as NodeListOf<HTMLAnchorElement>;
     const bullets = document.querySelectorAll('.bullet');
     const bulletLines = document.querySelectorAll('.bullet-line-red');
     const bulletHeadings = document.querySelectorAll('.is-bullet-content');
@@ -37,15 +42,22 @@ window.Webflow.push(() => {
           .timeline({ defaults: { ease: 'none' } })
           .from(target, {
             opacity: 0,
+            duration: 1,
             yPercent: 4,
           })
           .to(target, {
             opacity: 1,
-            duration: 3,
+            duration: 10,
+            yPercent: 0,
+          })
+          .to(target, {
+            opacity: 1,
+            duration: 10,
             yPercent: 0,
           })
           .to(target, {
             opacity: 0,
+            duration: 1,
             yPercent: -4,
           });
       },
@@ -54,10 +66,10 @@ window.Webflow.push(() => {
 
     const masterTimeline = gsap.timeline({
       scrollTrigger: {
-        trigger: '.sticky-layout',
+        trigger: '.sticky-wrapper',
         start: 'top top',
-        end: '+=500%',
-        pin: true,
+        end: 'bottom bottom',
+        //markers: true,
         scrub: 1,
       },
       defaults: {
@@ -68,9 +80,9 @@ window.Webflow.push(() => {
     // videos
     var videoTimeline = gsap.timeline({
       scrollTrigger: {
-        trigger: '.sticky-layout',
+        trigger: '.sticky-wrapper',
         start: 'top top',
-        end: '+=500%',
+        end: 'bottom bottom',
         scrub: 1,
       },
       defaults: {
@@ -80,6 +92,7 @@ window.Webflow.push(() => {
 
     videoTimeline
       .videoFadeAndMove(videoWrappers[0])
+      .addLabel('marker1')
       .videoFadeAndMove(videoWrappers[1])
       .videoFadeAndMove(videoWrappers[2])
       .videoFadeAndMove(videoWrappers[3])
@@ -114,7 +127,7 @@ window.Webflow.push(() => {
       // reset
       gsap.to(bullets, { backgroundColor: NAVY, borderColor: GRAY });
       gsap.to(bulletHeadings, { backgroundImage: BG_WHITE_GRADIENT });
-      gsap.set(bulletLines, { height: '10%' });
+      gsap.set(bulletLines, { height: '0%' });
       //gsap.set(videoWrappers, { opacity: 0 });
 
       // set new
@@ -144,4 +157,51 @@ window.Webflow.push(() => {
       tlMaster.add(tlText);
     });
   }
+
+  function buildSwiper() {
+    let swiperMain = new Swiper('.swiper', {
+      slidesPerView: 1,
+      keyboard: true,
+      direction: 'horizontal',
+      navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev',
+      },
+    });
+    const twoBtn = document.querySelector('#slide-two-btn');
+    const threeBtn = document.querySelector('#slide-three-btn');
+
+    twoBtn?.addEventListener('click', () => {
+      swiperMain.slideTo(1);
+    });
+
+    threeBtn?.addEventListener('click', () => {
+      swiperMain.slideTo(2);
+    });
+  }
+  buildSwiper();
+
+  function laptopSectionScroll() {
+    let laptopTimeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: '.laptop-lottie',
+        start: 'top bottom',
+        end: 'top top+=30%', // offset from lottie
+        markers: true,
+        scrub: true,
+      },
+    });
+    laptopTimeline.to('.laptop-lottie', {
+      opacity: 1,
+      onComplete: () => {
+        const laptopVideos = document.querySelectorAll(
+          '[wb-data="laptop-video"]'
+        ) as NodeListOf<HTMLVideoElement>;
+        laptopVideos.forEach((video) => {
+          video.currentTime = 0;
+        });
+      },
+    });
+  }
+  laptopSectionScroll();
 });
