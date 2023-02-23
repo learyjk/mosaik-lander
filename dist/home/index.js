@@ -12037,7 +12037,7 @@
       initAnimations().then(() => {
         const LOTTIE_DURATION = 1.7;
         ScrollTrigger2.create({
-          trigger: ".laptop-trigger",
+          trigger: ".swiper-control-wrap",
           start: "top bottom",
           onToggle: () => {
             gsapWithCSS.set(".laptop-screen-wrap", {
@@ -12073,7 +12073,7 @@
       const initialGrayHeading = getComputedStyle(swiperControlHeadings[0]).backgroundImage;
       const initialGrayText = getComputedStyle(swiperControlTexts[0]).color;
       gsapWithCSS.set(swiperControlHeadings[0], { backgroundImage: BG_BLUE_GRADIENT });
-      gsapWithCSS.set(swiperControlTexts[0], { color: WHITE });
+      gsapWithCSS.set(swiperControlTexts[0], { color: WHITE, height: "auto" });
       swiperControlAnchors.forEach((control, index) => {
         control.addEventListener("click", () => {
           if (index === activeIndex) {

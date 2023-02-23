@@ -200,7 +200,7 @@ window.Webflow.push(() => {
         //console.log('Initialized lottie animations');
         const LOTTIE_DURATION = 1.7;
         ScrollTrigger.create({
-          trigger: '.laptop-trigger',
+          trigger: '.swiper-control-wrap',
           start: 'top bottom',
           onToggle: () => {
             gsap.set('.laptop-screen-wrap', {
@@ -233,16 +233,13 @@ window.Webflow.push(() => {
       '.swiper-control_text'
     ) as NodeListOf<HTMLParagraphElement>;
     const topMover = swiperControlWrap?.querySelector('.swiper-control_top-mover');
-    // const laptopVideos = document.querySelectorAll(
-    //   '[wb-data="laptop-video"]'
-    // ) as NodeListOf<HTMLVideoElement>;
     if (!topMover) return;
 
     //init
     const initialGrayHeading = getComputedStyle(swiperControlHeadings[0]).backgroundImage;
     const initialGrayText = getComputedStyle(swiperControlTexts[0]).color;
     gsap.set(swiperControlHeadings[0], { backgroundImage: BG_BLUE_GRADIENT });
-    gsap.set(swiperControlTexts[0], { color: WHITE });
+    gsap.set(swiperControlTexts[0], { color: WHITE, height: 'auto' });
 
     swiperControlAnchors.forEach((control, index) => {
       control.addEventListener('click', () => {
